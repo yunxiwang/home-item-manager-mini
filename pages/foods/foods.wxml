@@ -1,0 +1,142 @@
+<view class="page">
+  <!-- 提醒订阅入口 -->
+  <view style="display:flex;align-items:center;justify-content:space-between;padding:20rpx 36rpx;margin:16rpx 36rpx 8rpx;background:linear-gradient(135deg,var(--accent-light),#E0F2FE);border-radius:var(--radius-sm);border:2rpx solid var(--accent-light)">
+    <view style="display:flex;align-items:center;gap:12rpx">
+      <text style="font-size:36rpx">🔔</text>
+      <text style="font-size:26rpx;font-weight:600;color:var(--accent)">开启临期提醒</text>
+    </view>
+    <view class="btn-primary" bindtap="subscribeNow" style="width:auto;padding:16rpx 32rpx;font-size:26rpx;box-shadow:none">一键订阅</view>
+  </view>
+
+  <view class="search-bar">
+    <image class="search-icon" src="/assets/search.svg" mode="aspectFit"></image>
+    <input placeholder="搜索食物名称" bindinput="onSearch" value="{{search}}"/>
+  </view>
+
+  <view class="segment">
+    <view class="segment-item {{tab==='active'?'active':''}}" bindtap="switchTab" data-tab="active">
+      在期内<text class="segment-count">{{activeCount}}</text>
+    </view>
+    <view class="segment-item {{tab==='expired'?'active':''}}" bindtap="switchTab" data-tab="expired">
+      已过期<text class="segment-count">{{expiredCount}}</text>
+    </view>
+  </view>
+
+  <scroll-view class="chips-scroll" scroll-x>
+    <view class="chip {{selectedCat===''?'active':''}}" bindtap="selectCat" data-cat="">全部</view>
+    <view wx:for="{{categories}}" wx:key="*this"
+      class="chip {{selectedCat===item?'active':''}}" bindtap="selectCat" data-cat="{{item}}">{{item}}</view>
+  </scroll-view>
+
+  <view wx:if="{{displayList.length===0}}" class="empty-state">
+    <text class="empty-icon">🍔</text>
+    <text>{{tab==='active'?'还没有在期内的食物':'没有已过期的食物'}}</text>
+  </view>
+
+  <view wx:else class="list">
+    <view wx:for="{{displayList}}" wx:key="_id" class="card {{item._status}}">
+      <view class="card-hd">
+        <text class="card-name">{{item.name}}</text>
+        <view class="card-badge-wrap">
+          <text wx:if="{{item._badge}}" class="badge {{item._badge.cls}}">{{item._badge.text}}</text>
+          <view class="card-acts">
+            <view class="act-btn" catchtap="editFood" data-id="{{item._id}}">✎</view>
+            <view class="act-btn act-del" catchtap="deleteFood" data-id="{{item._id}}" data-name="{{item.name}}">✕</view>
+          </view>
+        </view>
+      </view>
+      <view class="card-meta">
+        <view class="meta-col">
+          <text class="meta-label">数量</text>
+          <text class="meta-val">{{item.quantity||'×1'}}</text>
+        </view>
+        <view class="meta-col">
+          <text class="meta-label">购买日期</text>
+          <text class="meta-val">{{item.purchaseDate}}</text>
+        </view>
+        <view class="meta-col">
+          <text class="meta-label">保质期至</text>
+          <text class="meta-val {{item._days<=3&&item._days>0?'urgent':''}}">{{item.expirationDate}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="fab" bindtap="openForm">+</view>
+
+  <!-- 表单底部弹窗 -->
+  <view wx:if="{{showForm}}" class="modal-mask" bindtap="closeForm">
+    <view class="modal-sheet" catchtap="nop">
+      <view class="modal-handle"></view>
+      <view class="modal-title">{{editId?'编辑食物':'添加食物'}}</view>
+
+      <view class="form-group">
+        <view class="form-label">名称 *</view>
+        <input class="form-input" placeholder="如：蒙牛纯牛奶" value="{{form.name}}" bindinput="onFormField" data-field="name"/>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">分类 *</view>
+        <scroll-view class="chips-scroll" scroll-x style="padding:0;margin-bottom:0">
+          <view wx:for="{{categories}}" wx:key="*this"
+            class="chip {{form.category===item?'active':''}}" bindtap="selectFormCat" data-cat="{{item}}">{{item}}</view>
+          <view class="chip-add" bindtap="showFormCatInput">+</view>
+        </scroll-view>
+        <view wx:if="{{formShowCatInput}}" style="display:flex;gap:12rpx;margin-top:12rpx;align-items:center">
+          <input style="width:200rpx;padding:12rpx 20rpx;border:2rpx solid var(--accent);border-radius:var(--radius-pill);font-size:24rpx" placeholder="新分类" value="{{formNewCat}}" bindinput="onCatField"/>
+          <view class="btn-primary" style="width:auto;padding:12rpx 24rpx;font-size:24rpx" bindtap="addFormCategory">确定</view>
+          <view class="btn-ghost" style="width:auto;padding:12rpx 24rpx;font-size:24rpx;color:var(--red)" bindtap="hideFormCatInput">取消</view>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">数量</view>
+        <view class="stepper-row">
+          <view class="stepper">
+            <view class="stepper-btn" bindtap="formDecQty">−</view>
+            <view class="stepper-val">{{form.qty}}</view>
+            <view class="stepper-btn" bindtap="formIncQty">+</view>
+          </view>
+          <input class="form-input stepper-unit" placeholder="单位，如：包、个、ml" value="{{form.unit}}" bindinput="onFormField" data-field="unit"/>
+        </view>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">购买日期 *</view>
+        <picker mode="date" value="{{form.purchaseDate}}" bindchange="onFormDate" data-field="purchaseDate">
+          <view class="form-input">{{form.purchaseDate||'请选择日期'}}</view>
+        </picker>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">保质期截止日期 *</view>
+        <picker mode="date" value="{{form.expirationDate}}" bindchange="onFormDate" data-field="expirationDate">
+          <view class="form-input">{{form.expirationDate||'请选择日期'}}</view>
+        </picker>
+      </view>
+
+      <view class="form-group">
+        <view class="form-label">备注</view>
+        <textarea class="form-input" style="min-height:120rpx" placeholder="其他需要记录的信息..." value="{{form.notes}}" bindinput="onFormField" data-field="notes"/>
+      </view>
+
+      <view class="form-buttons">
+        <button class="btn-primary" bindtap="submitForm">保存</button>
+        <button class="btn-ghost" bindtap="closeForm">取消</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 删除确认弹窗 -->
+  <view wx:if="{{showDelete}}" class="modal-mask" bindtap="hideDelete">
+    <view class="modal-sheet" catchtap="nop">
+      <view class="modal-handle"></view>
+      <view class="modal-title">确认删除</view>
+      <text style="text-align:center;display:block;padding:0 32rpx 32rpx;color:var(--text-secondary)">确定要删除「{{deletingName}}」吗？</text>
+      <view class="form-buttons">
+        <button class="btn-primary" style="background:var(--red)" bindtap="confirmDelete">删除</button>
+        <button class="btn-ghost" bindtap="hideDelete">取消</button>
+      </view>
+    </view>
+  </view>
+</view>

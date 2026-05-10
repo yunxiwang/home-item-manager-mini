@@ -1,0 +1,47 @@
+<view class="page" style="padding-top:24rpx">
+  <view class="form-group">
+    <view class="form-label">名称 *</view>
+    <input class="form-input" placeholder="如：螺丝刀套装" value="{{form.name}}" bindinput="onField" data-field="name"/>
+  </view>
+
+  <view class="form-group">
+    <view class="form-label">分类 *</view>
+    <scroll-view class="chips-scroll" scroll-x style="padding:0">
+      <view wx:for="{{categories}}" wx:key="*this"
+        class="chip {{form.category===item?'active':''}}" bindtap="selectCat" data-cat="{{item}}">{{item}}</view>
+      <view class="chip-add" bindtap="showCatInput">+</view>
+    </scroll-view>
+    <view wx:if="{{showCatInput}}" style="display:flex;gap:12rpx;margin-top:12rpx;align-items:center">
+      <input style="width:200rpx;padding:12rpx 20rpx;border:1rpx solid var(--accent);border-radius:var(--radius-pill);font-size:24rpx" placeholder="新分类" value="{{newCat}}" bindinput="onField" data-field="newCat"/>
+      <button class="btn-sm" style="border-color:var(--accent);color:var(--accent)" bindtap="addCategory">确定</button>
+      <button class="btn-sm" style="color:var(--red);border-color:var(--red)" bindtap="hideCatInput">取消</button>
+    </view>
+  </view>
+
+  <view class="form-group">
+    <view class="form-label">数量</view>
+    <view class="stepper-row">
+      <view class="stepper">
+        <view class="stepper-btn" bindtap="decQty">−</view>
+        <view class="stepper-val">{{form.qty}}</view>
+        <view class="stepper-btn" bindtap="incQty">+</view>
+      </view>
+      <input class="form-input stepper-unit" placeholder="单位，如：个、套、件" value="{{form.unit}}" bindinput="onField" data-field="unit"/>
+    </view>
+  </view>
+
+  <view class="form-group">
+    <view class="form-label">存放位置 *</view>
+    <input class="form-input" placeholder="如：客厅电视柜第二层抽屉" value="{{form.location}}" bindinput="onField" data-field="location"/>
+  </view>
+
+  <view class="form-group">
+    <view class="form-label">备注</view>
+    <textarea class="form-input" style="min-height:120rpx" placeholder="其他需要记录的信息..." value="{{form.notes}}" bindinput="onField" data-field="notes"/>
+  </view>
+
+  <view style="padding:24rpx 32rpx">
+    <button class="btn-primary" bindtap="submit">保存</button>
+    <button class="btn-ghost" style="margin-top:12rpx" bindtap="goBack">取消</button>
+  </view>
+</view>

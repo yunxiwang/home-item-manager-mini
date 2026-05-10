@@ -1,0 +1,63 @@
+<view class="page" style="padding-top:24rpx">
+  <!-- 名称 -->
+  <view class="form-group">
+    <view class="form-label">名称 *</view>
+    <input class="form-input" placeholder="如：蒙牛纯牛奶" value="{{form.name}}" bindinput="onField" data-field="name"/>
+  </view>
+
+  <!-- 分类 -->
+  <view class="form-group">
+    <view class="form-label">分类 *</view>
+    <scroll-view class="chips-scroll" scroll-x style="padding:0">
+      <view wx:for="{{categories}}" wx:key="*this"
+        class="chip {{form.category===item?'active':''}}" bindtap="selectCat" data-cat="{{item}}">{{item}}</view>
+      <view class="chip-add" bindtap="showCatInput">+</view>
+    </scroll-view>
+    <view wx:if="{{showCatInput}}" style="display:flex;gap:12rpx;margin-top:12rpx;align-items:center">
+      <input style="width:200rpx;padding:12rpx 20rpx;border:1rpx solid var(--accent);border-radius:var(--radius-pill);font-size:24rpx" placeholder="新分类" value="{{newCat}}" bindinput="onField" data-field="newCat"/>
+      <button class="btn-sm" style="border-color:var(--accent);color:var(--accent)" bindtap="addCategory">确定</button>
+      <button class="btn-sm" style="color:var(--red);border-color:var(--red)" bindtap="hideCatInput">取消</button>
+    </view>
+  </view>
+
+  <!-- 数量 -->
+  <view class="form-group">
+    <view class="form-label">数量</view>
+    <view class="stepper-row">
+      <view class="stepper">
+        <view class="stepper-btn" bindtap="decQty">−</view>
+        <view class="stepper-val">{{form.qty}}</view>
+        <view class="stepper-btn" bindtap="incQty">+</view>
+      </view>
+      <input class="form-input stepper-unit" placeholder="单位，如：包、个、ml" value="{{form.unit}}" bindinput="onField" data-field="unit"/>
+    </view>
+  </view>
+
+  <!-- 购买日期 -->
+  <view class="form-group">
+    <view class="form-label">购买日期 *</view>
+    <picker mode="date" value="{{form.purchaseDate}}" bindchange="onDate" data-field="purchaseDate">
+      <view class="form-input">{{form.purchaseDate||'请选择日期'}}</view>
+    </picker>
+  </view>
+
+  <!-- 保质期 -->
+  <view class="form-group">
+    <view class="form-label">保质期截止日期 *</view>
+    <picker mode="date" value="{{form.expirationDate}}" bindchange="onDate" data-field="expirationDate">
+      <view class="form-input">{{form.expirationDate||'请选择日期'}}</view>
+    </picker>
+  </view>
+
+  <!-- 备注 -->
+  <view class="form-group">
+    <view class="form-label">备注</view>
+    <textarea class="form-input" style="min-height:120rpx" placeholder="其他需要记录的信息..." value="{{form.notes}}" bindinput="onField" data-field="notes"/>
+  </view>
+
+  <!-- 按钮 -->
+  <view style="padding:24rpx 32rpx">
+    <button class="btn-primary" bindtap="submit">保存</button>
+    <button class="btn-ghost" style="margin-top:12rpx" bindtap="goBack">取消</button>
+  </view>
+</view>

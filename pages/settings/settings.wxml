@@ -1,0 +1,174 @@
+<view class="page" style="padding-top:24rpx">
+  <!-- 提醒方案 -->
+  <view class="section-header">提醒方案</view>
+  <view class="settings-section">
+    <view style="display:flex;align-items:center;justify-content:space-between;padding:24rpx 36rpx 8rpx">
+      <text style="font-size:26rpx;color:var(--text-secondary);font-weight:500">提前天数设置</text>
+      <view wx:if="{{!isEditing}}" class="btn-outline" bindtap="startEdit">编辑</view>
+      <view wx:else style="display:flex;gap:16rpx">
+        <view class="btn-outline" bindtap="cancelEdit">取消</view>
+        <view class="btn-primary" style="width:auto;padding:14rpx 32rpx;font-size:26rpx" bindtap="saveReminders">保存</view>
+      </view>
+    </view>
+
+    <view class="reminder-preset">
+      <view wx:for="{{reminders}}" wx:key="id"
+        class="reminder-card {{item.color || 'yellow'}}">
+        <view wx:if="{{isEditing}}" class="row-del" bindtap="removeReminder" data-id="{{item.id}}">✕</view>
+        <picker wx:if="{{isEditing}}" mode="selector" range="{{dayOptions}}" value="{{item.days-1}}" data-id="{{item.id}}" bindchange="onReminderPick">
+          <view class="reminder-days" style="margin:0">{{item.days}}</view>
+        </picker>
+        <view wx:else class="reminder-days">{{item.days}}</view>
+        <view class="reminder-label">天前提醒</view>
+      </view>
+    </view>
+
+    <view wx:if="{{isEditing}}" style="text-align:center;padding:0 36rpx 24rpx">
+      <view class="reminder-add-btn" bindtap="openAddModal">+ 添加提醒节点</view>
+    </view>
+  </view>
+
+  <!-- 通知 -->
+  <view class="section-header">通知</view>
+  <view class="settings-section">
+    <view class="settings-row" bindtap="subscribeReminder">
+      <view class="row-left">
+        <view class="row-icon" style="background:#fff7ed">🔔</view>
+        <text class="row-label">提醒订阅</text>
+      </view>
+      <text class="row-value">去订阅</text>
+    </view>
+  </view>
+
+  <!-- 数据管理 -->
+  <view class="section-header">数据管理</view>
+  <view class="settings-section">
+    <view class="settings-row" bindtap="exportData">
+      <view class="row-left">
+        <view class="row-icon" style="background:#f0fdf4">📤</view>
+        <text class="row-label">导出数据</text>
+      </view>
+      <text class="row-arrow">›</text>
+    </view>
+    <view class="settings-row" bindtap="importData">
+      <view class="row-left">
+        <view class="row-icon" style="background:#eff6ff">📥</view>
+        <text class="row-label">导入数据</text>
+      </view>
+      <text class="row-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 分类管理 -->
+  <view class="section-header">分类管理</view>
+  <view class="settings-section">
+    <view class="settings-row" bindtap="openCatModal" data-type="food">
+      <view class="row-left">
+        <view class="row-icon" style="background:#fef3c7">🍔</view>
+        <text class="row-label">食物分类</text>
+      </view>
+      <text class="row-value">{{foodCatCount}}个分类</text>
+    </view>
+    <view class="settings-row" bindtap="openCatModal" data-type="item">
+      <view class="row-left">
+        <view class="row-icon" style="background:#f0fdf4">📦</view>
+        <text class="row-label">物品分类</text>
+      </view>
+      <text class="row-value">{{itemCatCount}}个分类</text>
+    </view>
+  </view>
+
+  <!-- 联系我们 -->
+  <view class="section-header">联系我们</view>
+  <view class="settings-section">
+    <view class="settings-row" bindtap="openFeedback">
+      <view class="row-left">
+        <view class="row-icon" style="background:#eff6ff">💬</view>
+        <text class="row-label">意见反馈</text>
+      </view>
+      <text class="row-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 关于 -->
+  <view class="section-header">关于</view>
+  <view class="settings-section">
+    <view class="settings-row">
+      <text class="row-label">版本</text>
+      <text class="row-value">1.0.0</text>
+    </view>
+  </view>
+
+  <!-- 分类管理弹窗 -->
+  <view wx:if="{{showCatModal}}" class="modal-mask" bindtap="closeCatModal">
+    <view class="modal-sheet" catchtap="nop">
+      <view class="modal-handle"></view>
+      <view class="modal-title">{{catModalType==='food'?'管理食物分类':'管理物品分类'}}</view>
+      <view style="display:flex;flex-wrap:wrap;gap:16rpx;padding:0 36rpx 24rpx">
+        <view wx:for="{{catModalList}}" wx:key="*this"
+          style="display:inline-flex;align-items:center;gap:8rpx;padding:14rpx 24rpx;background:#f3f3f5;border-radius:var(--radius-pill);font-size:26rpx;font-weight:500;color:var(--text)">
+          {{item}}
+          <text bindtap="removeCatFromModal" data-cat="{{item}}"
+            style="font-size:28rpx;color:var(--text-tertiary);padding:0 4rpx">×</text>
+        </view>
+      </view>
+      <view style="display:flex;gap:12rpx;padding:0 36rpx 24rpx;align-items:center">
+        <input placeholder="新分类名称" value="{{catModalInput}}" bindinput="onCatInput"
+          style="flex:1;padding:22rpx 28rpx;border:2rpx solid #d2d2d7;border-radius:16rpx;font-size:28rpx;color:var(--text);background:#fff"/>
+        <button class="btn-primary" bindtap="addCatFromModal" style="width:auto;padding:22rpx 36rpx">添加</button>
+      </view>
+      <view style="padding:0 36rpx">
+        <button class="btn-ghost" bindtap="closeCatModal">完成</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加提醒弹窗 -->
+  <view wx:if="{{showAddModal}}" class="modal-mask" bindtap="closeAddModal">
+    <view class="modal-sheet" catchtap="nop">
+      <view class="modal-handle"></view>
+      <view class="modal-title">添加提醒节点</view>
+
+      <view style="display:flex;justify-content:center;padding:0 36rpx 24rpx">
+        <picker mode="selector" range="{{dayOptions}}" value="{{addDays-1}}" bindchange="onAddDaysPick">
+          <view style="font-size:56rpx;font-weight:800;color:var(--text);letter-spacing:-2rpx;padding:16rpx 40rpx;background:#f3f3f5;border-radius:20rpx">{{addDays}}</view>
+        </picker>
+        <text style="font-size:30rpx;color:var(--text-secondary);margin-left:20rpx;align-self:center">天前提醒</text>
+      </view>
+
+      <view style="padding:0 36rpx 24rpx">
+        <text style="font-size:24rpx;color:var(--text-secondary);font-weight:500;display:block;margin-bottom:20rpx">选择颜色</text>
+        <view style="display:grid;grid-template-columns:repeat(4,1fr);gap:20rpx">
+          <view wx:for="{{colorOptions}}" wx:key="name" bindtap="selectAddColor" data-color="{{item.name}}"
+            style="display:flex;justify-content:center;padding:20rpx 0;border-radius:20rpx;{{addColor===item.name?'background:#f3f3f5;box-shadow:0 0 0 6rpx '+item.hex+';':''}}">
+            <view style="width:56rpx;height:56rpx;border-radius:50%;background:{{item.hex}}"></view>
+          </view>
+        </view>
+      </view>
+
+      <view class="form-buttons">
+        <button class="btn-primary" bindtap="confirmAdd">确认添加</button>
+        <button class="btn-ghost" bindtap="closeAddModal">取消</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 意见反馈弹窗 -->
+  <view wx:if="{{showFeedback}}" class="modal-mask" bindtap="closeFeedback">
+    <view class="modal-sheet" catchtap="nop">
+      <view class="modal-handle"></view>
+      <view class="modal-title">意见反馈</view>
+      <view style="padding:0 36rpx 24rpx">
+        <text style="font-size:26rpx;color:var(--text-secondary);line-height:1.6;display:block;margin-bottom:24rpx">
+          感谢使用物品管理助手！如果你有任何建议、功能需求或使用问题，请告诉我们。
+        </text>
+        <textarea class="form-input" style="min-height:200rpx;width:100%" placeholder="写下你的想法..." bindinput="onFeedbackInput" maxlength="500" auto-height/>
+        <text style="text-align:right;display:block;margin-top:8rpx;font-size:22rpx;color:var(--text-tertiary)">{{feedbackLen}}/500</text>
+      </view>
+      <view class="form-buttons">
+        <button class="btn-primary" bindtap="submitFeedback">提交反馈</button>
+        <button class="btn-ghost" bindtap="closeFeedback">取消</button>
+      </view>
+    </view>
+  </view>
+</view>
