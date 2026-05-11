@@ -67,7 +67,7 @@ page {
 .chip.active { background: var(--text); color: #fff; border-color: var(--text); }
 
 /* ===== 列表 ===== */
-.list { padding: 0 20rpx 200rpx; }
+.list { padding: 0 20rpx 280rpx; }
 
 /* ===== 卡片 ===== */
 .card {
@@ -108,11 +108,11 @@ page {
 .badge-expired { background: #F1F5F9; color: #94A3B8; }
 
 /* ===== 卡片操作按钮 ===== */
-.card-acts { display: flex; gap: 10rpx; flex-shrink: 0; }
+.card-acts { display: flex; gap: 20rpx; flex-shrink: 0; }
 .act-btn {
-  width: 52rpx; height: 52rpx; border-radius: 50%; background: #f3f3f5;
+  width: 56rpx; height: 56rpx; border-radius: 50%; background: #f3f3f5;
   display: flex; align-items: center; justify-content: center;
-  font-size: 26rpx; color: var(--text-secondary); font-family: inherit;
+  font-size: 28rpx; color: var(--text-secondary); font-family: inherit;
   line-height: 1;
 }
 .act-del:active { background: #fee2e2; color: var(--red); }
@@ -149,9 +149,7 @@ page {
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 12rpx 40rpx rgba(249,115,22,0.35);
   z-index: 40; font-weight: 300; line-height: 1; padding-bottom: 6rpx;
-  transition: all 0.2s;
 }
-.fab:active { transform: scale(0.9); }
 
 /* ===== 表单 ===== */
 .form-group { margin: 0 36rpx 28rpx; }

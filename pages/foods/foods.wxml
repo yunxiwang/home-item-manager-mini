@@ -10,7 +10,7 @@
 
   <view class="search-bar">
     <image class="search-icon" src="/assets/search.svg" mode="aspectFit"></image>
-    <input placeholder="搜索食物名称" bindinput="onSearch" value="{{search}}"/>
+    <input placeholder="搜索食物名称" bindinput="onSearch" value="{{search}}" focus="{{searchFocus}}" bindfocus="onSearchFocus"/>
   </view>
 
   <view class="segment">
@@ -62,7 +62,11 @@
     </view>
   </view>
 
-  <view class="fab" bindtap="openForm">+</view>
+  <movable-area style="position:fixed;bottom:0;right:0;width:100%;height:100vh;pointer-events:none;z-index:40">
+    <movable-view direction="all" damping="40" style="width:100rpx;height:100rpx;pointer-events:auto" x="{{fabX}}" y="{{fabY}}">
+      <view class="fab" bindtap="openForm" style="position:static">+</view>
+    </movable-view>
+  </movable-area>
 
   <!-- 表单底部弹窗 -->
   <view wx:if="{{showForm}}" class="modal-mask" bindtap="closeForm">
@@ -101,6 +105,15 @@
         </view>
       </view>
 
+      <!-- 到期日计算方式 -->
+      <view class="form-group">
+        <view class="form-label">到期日计算</view>
+        <view class="segment" style="margin:0">
+          <view class="segment-item {{calcMode==='manual'?'active':''}}" bindtap="switchCalcMode" data-mode="manual">手动选择</view>
+          <view class="segment-item {{calcMode==='auto'?'active':''}}" bindtap="switchCalcMode" data-mode="auto">自动计算</view>
+        </view>
+      </view>
+
       <view class="form-group">
         <view class="form-label">购买日期 *</view>
         <picker mode="date" value="{{form.purchaseDate}}" bindchange="onFormDate" data-field="purchaseDate">
@@ -108,11 +121,32 @@
         </picker>
       </view>
 
-      <view class="form-group">
+      <view wx:if="{{calcMode==='manual'}}" class="form-group">
         <view class="form-label">保质期截止日期 *</view>
         <picker mode="date" value="{{form.expirationDate}}" bindchange="onFormDate" data-field="expirationDate">
           <view class="form-input">{{form.expirationDate||'请选择日期'}}</view>
         </picker>
+      </view>
+
+      <view wx:if="{{calcMode==='auto'}}">
+        <view class="form-group">
+          <view class="form-label">生产日期 *</view>
+          <picker mode="date" value="{{form.productionDate}}" bindchange="onFormDate" data-field="productionDate">
+            <view class="form-input">{{form.productionDate||'请选择生产日期'}}</view>
+          </picker>
+        </view>
+
+        <view class="form-group">
+          <view class="form-label">保质期时长</view>
+          <picker mode="multiSelector" range="{{shelfPickerRange}}" value="{{[shelfYears,shelfMonths,shelfDaysSel]}}" bindchange="onShelfPick">
+            <view class="form-input">{{shelfYears}}年 {{shelfMonths}}月 {{shelfDaysSel}}天</view>
+          </picker>
+        </view>
+
+        <view wx:if="{{calcExpDate}}" style="margin:0 36rpx 28rpx;padding:18rpx 28rpx;background:var(--accent-light);border-radius:16rpx">
+          <text style="font-size:24rpx;color:var(--text-secondary)">截止日期：</text>
+          <text style="font-size:30rpx;font-weight:600;color:var(--accent)">{{calcExpDate}}</text>
+        </view>
       </view>
 
       <view class="form-group">

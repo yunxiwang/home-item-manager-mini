@@ -51,7 +51,11 @@
     </view>
   </view>
 
-  <view class="fab" bindtap="openForm">+</view>
+  <movable-area style="position:fixed;bottom:0;right:0;width:100%;height:100vh;pointer-events:none;z-index:40">
+    <movable-view direction="all" damping="40" style="width:100rpx;height:100rpx;pointer-events:auto" x="{{fabX}}" y="{{fabY}}">
+      <view class="fab" bindtap="openForm" style="position:static">+</view>
+    </movable-view>
+  </movable-area>
 
   <!-- 表单底部弹窗 -->
   <view wx:if="{{showForm}}" class="modal-mask" bindtap="closeForm">

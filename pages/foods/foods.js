@@ -1,7 +1,7 @@
 const { getFoods, addFood, updateFood, deleteFood, getCategories, saveCategories } = require('../../utils/storage');
 const { getCardStatus, getBadgeInfo, partitionFoods, getDaysUntilExpiration } = require('../../utils/reminder');
 
-const EMPTY_FORM = { name: '', category: '', qty: 1, unit: '', purchaseDate: '', expirationDate: '', notes: '', notified: { threeMonths: false, oneMonth: false, threeDays: false } };
+const EMPTY_FORM = { name: '', category: '', qty: 1, unit: '', purchaseDate: '', productionDate: '', expirationDate: '', notes: '', notified: { threeMonths: false, oneMonth: false, threeDays: false } };
 
 // 示例数据
 const SAMPLES = [
@@ -12,15 +12,20 @@ const SAMPLES = [
 
 Page({
   data: {
-    tab: 'active', search: '', selectedCat: '',
+    tab: 'active', search: '', selectedCat: '', searchFocus: false, fabX: 305, fabY: 480,
     foods: [], categories: [], displayList: [],
     activeCount: 0, expiredCount: 0,
     showDelete: false, deletingId: '', deletingName: '',
     showForm: false, editId: '', form: { ...EMPTY_FORM },
     formShowCatInput: false, formNewCat: '',
+    calcMode: 'manual', shelfYears: 0, shelfMonths: 3, shelfDaysSel: 0, shelfPickerRange: [[...Array(6).keys()],[...Array(12).keys()],[...Array(31).keys()]], calcExpDate: '',
   },
 
-  onShow() { this.loadData(); },
+  onShow() {
+    this.loadData();
+    const sys = wx.getSystemInfoSync();
+    this.setData({ fabX: sys.windowWidth - 90, fabY: sys.windowHeight - 200 });
+  },
 
   async loadData() {
     try {
@@ -28,7 +33,6 @@ Page({
         getFoods().catch(() => []),
         getCategories('food').catch(() => ['零食','饮料','冷冻食品','生鲜','其他']),
       ]);
-      // 首次使用：写入示例数据到数据库
       if (foods.length === 0) {
         for (const s of SAMPLES) {
           await addFood({
@@ -38,16 +42,29 @@ Page({
           }).catch(() => {});
         }
         const fresh = await getFoods().catch(() => []);
-        this.setData({ foods: fresh, categories }, () => this.applyFilters());
+        if (fresh.length === 0) {
+          // CloudBase 写入失败，直接用本地示例渲染
+          this.setData({ foods: [], categories }, () => {
+            this.setData({ displayList: SAMPLES, activeCount: 3, expiredCount: 0 });
+          });
+        } else {
+          this.setData({ foods: fresh, categories }, () => this.applyFilters());
+        }
       } else {
         this.setData({ foods, categories }, () => this.applyFilters());
       }
-    } catch (e) { this.applyFilters(); }
+    } catch (e) {
+      // 兜底：CloudBase 完全不可用时也不空白
+      this.setData({ displayList: SAMPLES, activeCount: 3, expiredCount: 0 });
+    }
   },
 
   applyFilters() {
     const { foods, tab, search, selectedCat } = this.data;
-    if (foods.length === 0) { this.setData({ displayList: [], activeCount: 0, expiredCount: 0 }); return; }
+    if (foods.length === 0) {
+      this.setData({ displayList: SAMPLES, activeCount: 3, expiredCount: 0 });
+      return;
+    }
 
     const { active, expired } = partitionFoods(foods);
     let list = tab === 'active' ? active : expired;
@@ -67,9 +84,10 @@ Page({
     this.setData({ displayList, activeCount: active.length, expiredCount: expired.length });
   },
 
-  switchTab(e) { this.setData({ tab: e.currentTarget.dataset.tab }, () => this.applyFilters()); },
+  switchTab(e) { this.setData({ tab: e.currentTarget.dataset.tab, search: '', selectedCat: '' }, () => { this.applyFilters(); this.setData({ searchFocus: true }); }); },
   selectCat(e) { this.setData({ selectedCat: e.currentTarget.dataset.cat }, () => this.applyFilters()); },
   onSearch(e) { this.setData({ search: e.detail.value }, () => this.applyFilters()); },
+  onSearchFocus() { this.setData({ searchFocus: false }); },
 
   subscribeNow() {
     const TMPL = '6PdhckfTDkjkhcaxy_HpIE6rSUUnTTXF2HdLI8b5y8I';
@@ -105,7 +123,7 @@ Page({
 
   // ===== 表单 =====
   openForm() {
-    this.setData({ showForm: true, editId: '', form: { ...EMPTY_FORM, purchaseDate: this.today() }, formShowCatInput: false, formNewCat: '' });
+    this.setData({ showForm: true, editId: '', form: { ...EMPTY_FORM, purchaseDate: this.today() }, formShowCatInput: false, formNewCat: '', calcMode: 'manual', shelfYears: 0, shelfMonths: 3, shelfDaysSel: 0, calcExpDate: '' });
   },
 
   editFood(e) {
@@ -127,10 +145,33 @@ Page({
   closeForm() { this.setData({ showForm: false }); },
 
   onFormField(e) { this.setData({ ['form.' + e.currentTarget.dataset.field]: e.detail.value }); },
-  onFormDate(e) { this.setData({ ['form.' + e.currentTarget.dataset.field]: e.detail.value }); },
+  onFormDate(e) {
+    const f = e.currentTarget.dataset.field;
+    this.setData({ ['form.' + f]: e.detail.value });
+    if (f === 'purchaseDate' || f === 'productionDate') this.updateCalcExpDate();
+  },
   selectFormCat(e) { this.setData({ 'form.category': e.currentTarget.dataset.cat }); },
   formIncQty() { this.setData({ 'form.qty': this.data.form.qty + 1 }); },
   formDecQty() { const v = this.data.form.qty - 1; if (v >= 0) this.setData({ 'form.qty': v }); },
+
+  switchCalcMode(e) {
+    this.setData({ calcMode: e.currentTarget.dataset.mode }, () => this.updateCalcExpDate());
+  },
+  onShelfPick(e) {
+    const [y, m, d] = e.detail.value;
+    this.setData({ shelfYears: y, shelfMonths: m, shelfDaysSel: d }, () => this.updateCalcExpDate());
+  },
+  updateCalcExpDate() {
+    const { form, shelfYears, shelfMonths, shelfDaysSel } = this.data;
+    const baseDate = form.productionDate || form.purchaseDate;
+    if (!baseDate) return;
+    const dt = new Date(baseDate);
+    dt.setFullYear(dt.getFullYear() + shelfYears);
+    dt.setMonth(dt.getMonth() + shelfMonths);
+    dt.setDate(dt.getDate() + shelfDaysSel);
+    const exp = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+    this.setData({ calcExpDate: exp, 'form.expirationDate': exp });
+  },
 
   showFormCatInput() { this.setData({ formShowCatInput: true, formNewCat: '' }); },
   onCatField(e) { this.setData({ formNewCat: e.detail.value }); },

@@ -14,10 +14,14 @@ Page({
     items: [], categories: [], displayList: [],
     showDelete: false, deletingId: '', deletingName: '',
     showForm: false, editId: '', form: { ...EMPTY_FORM },
-    formShowCatInput: false, formNewCat: '',
+    formShowCatInput: false, formNewCat: '', fabX: 305, fabY: 480,
   },
 
-  onShow() { this.loadData(); },
+  onShow() {
+    this.loadData();
+    const sys = wx.getSystemInfoSync();
+    this.setData({ fabX: sys.windowWidth - 90, fabY: sys.windowHeight - 200 });
+  },
 
   async loadData() {
     try {
@@ -33,11 +37,19 @@ Page({
           }).catch(() => {});
         }
         const fresh = await getItems().catch(() => []);
-        this.setData({ items: fresh, categories }, () => this.applyFilters());
+        if (fresh.length === 0) {
+          this.setData({ items: [], categories }, () => {
+            this.setData({ displayList: SAMPLES });
+          });
+        } else {
+          this.setData({ items: fresh, categories }, () => this.applyFilters());
+        }
       } else {
         this.setData({ items, categories }, () => this.applyFilters());
       }
-    } catch (e) { this.applyFilters(); }
+    } catch (e) {
+      this.setData({ displayList: SAMPLES });
+    }
   },
 
   applyFilters() {
